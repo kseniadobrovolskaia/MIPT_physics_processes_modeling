@@ -30,7 +30,7 @@ int main()
 		Vector.push_back(*It);
 	
 	std::ofstream BinFile;
-	BinFile.open("BinFile.txt");
+	BinFile.open("BinFile.txt", std::ios::binary);
 	std::cout << "Task 11: created file BinFile.txt\n";
 
 	BinFile.write((char *)&Vector[0], Vector.size() * sizeof(Vector[0]));
