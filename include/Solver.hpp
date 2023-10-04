@@ -45,5 +45,24 @@ public:
 	void setStartConditions(double X0, double U0) override;
 	Coordinates getXV(double Time) const override;
 };
+	
+//------------------------------------------------AnalyticalSolver----------------------------------------------------------------
+
+/**
+ * @brief class EilerSolver - solves the Equation_ using Euler's numerical iterative method
+ */
+class EilerSolver : public Solver
+{
+	Coordinates StartXU;
+	double DeltaT_;
+	
+public:
+	EilerSolver(DiffEquation &Equation, double DeltaT = 0.01) : Solver(Equation), DeltaT_(DeltaT) {};
+	void setStartConditions(double X0, double U0) override;
+	void writeSolution(double Start, double Stop, double DeltaT, std::ofstream &FileWithSolution) const override;
+	Coordinates getStart(double Start, double DeltaT) const;
+	Coordinates getXV(double Time) const override;
+};
+
 
 #endif // SOLVER_H
