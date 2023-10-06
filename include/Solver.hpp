@@ -28,6 +28,7 @@ public:
 	Solver(const DiffEquation &Equation) : Equation_(Equation) {};
 	virtual void setStartConditions(double X0, double U0) = 0;
 	virtual void writeSolution(double Start, double Stop, double DeltaT, std::ofstream &FileWithSolution) const;
+	virtual void writeEnergy(double Start, double Stop, double DeltaT, std::ofstream &FileWithSolution) const;
 	virtual Coordinates getXV(double Time) const = 0;
 };
 
@@ -46,7 +47,7 @@ public:
 	Coordinates getXV(double Time) const override;
 };
 	
-//------------------------------------------------AnalyticalSolver----------------------------------------------------------------
+//---------------------------------------------------EilerSolver----------------------------------------------------------------
 
 /**
  * @brief class EilerSolver - solves the Equation_ using Euler's numerical iterative method
@@ -60,6 +61,30 @@ public:
 	EilerSolver(DiffEquation &Equation, double DeltaT = 0.01) : Solver(Equation), DeltaT_(DeltaT) {};
 	void setStartConditions(double X0, double U0) override;
 	void writeSolution(double Start, double Stop, double DeltaT, std::ofstream &FileWithSolution) const override;
+	void writeEnergy(double Start, double Stop, double DeltaT, std::ofstream &FileWithSolution) const override;
+	Coordinates getStart(double Start, double DeltaT) const;
+	Coordinates getXV(double Time) const override;
+};
+
+//---------------------------------------------------HeunSolver----------------------------------------------------------------
+
+/**
+ * @brief class HeunSolver - solves the Equation_ using specified Euler's method
+ *                            called Heun's scheme. Iterative numerical solution in two stages (predictive-corrector)
+ *                            based on the trapezoid method.
+
+
+ */
+class HeunSolver : public Solver
+{
+	Coordinates StartXU;
+	double DeltaT_;
+	
+public:
+	HeunSolver(DiffEquation &Equation, double DeltaT = 0.01) : Solver(Equation), DeltaT_(DeltaT) {};
+	void setStartConditions(double X0, double U0) override;
+	void writeSolution(double Start, double Stop, double DeltaT, std::ofstream &FileWithSolution) const override;
+	void writeEnergy(double Start, double Stop, double DeltaT, std::ofstream &FileWithSolution) const override;
 	Coordinates getStart(double Start, double DeltaT) const;
 	Coordinates getXV(double Time) const override;
 };

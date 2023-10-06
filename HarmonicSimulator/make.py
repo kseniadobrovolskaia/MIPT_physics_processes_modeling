@@ -10,35 +10,47 @@ def startSimulator():
     sub.run("cd .. && cd build && make", shell=True)
     sub.run(".././build/Simulator", shell=True)
 
-def getTrajectory(FileNameAnalytical):
+def getTrajectory(FileName):
     TrajectoryTypes = np.dtype([('T', np.double), ('X', np.double), ('U', np.double)])
-    AnalyticalTrajectory = np.fromfile(FileNameAnalytical, dtype=TrajectoryTypes);
-    return AnalyticalTrajectory
+    Trajectory = np.fromfile(FileName, dtype=TrajectoryTypes);
+    return Trajectory
+
+def getEnergy(FileName):
+    EnergyTypes = np.dtype([('T', np.double), ('E', np.double)])
+    Energy = np.fromfile(FileName, dtype=EnergyTypes);
+    return Energy
 
 def createGraph():
-    plt.figure(100)
-    plt.title("График зависимости координат X и U маятника от времени T")
+    plt.figure(figsize = (10, 10))
+    plt.title("График")
     plt.xlabel('T, c')
     plt.grid()
 
 def showTrajectory(Trajectory, GraphicName):
     NameX = GraphicName + ' X'
     NameY = GraphicName + ' U'
-    plt.plot(Trajectory['T'], Trajectory['X'], label = NameX)
-    plt.plot(Trajectory['T'], Trajectory['U'], label = NameY)
+    plt.plot(Trajectory['T'], Trajectory['X'], label = NameX, marker = ".")
+    plt.plot(Trajectory['T'], Trajectory['U'], label = NameY, marker = "^")
+
+def showEnergy(Energy, GraphicName):
+    Name = GraphicName + ' E'
+    plt.plot(Energy['T'], Energy['E'], label = Name, marker = ".")
 
 
 def main():
     startSimulator()
     FileGraphicsName = 'Graphics.png'
     FileNameAnalytic = 'Analitic.bin'
-    FileNameEiler = 'Eiler.bin'
+    FileNameEiler    = 'Eiler.bin'
+    FileNameHeun     = 'Heun.bin'
     AnalyticalTrajectory = getTrajectory(FileNameAnalytic)
-    EilerTrajectory = getTrajectory(FileNameEiler)
+    EilerTrajectory      = getTrajectory(FileNameEiler)
+    HeunTrajectory       = getTrajectory(FileNameHeun)
 
     createGraph()
     showTrajectory(AnalyticalTrajectory, 'Analitic')
     showTrajectory(EilerTrajectory, 'Eiler')
+    showTrajectory(HeunTrajectory, 'Heun')
 
     plt.legend()
     plt.savefig(FileGraphicsName)
