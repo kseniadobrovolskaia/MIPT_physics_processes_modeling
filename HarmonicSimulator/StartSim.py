@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 def startSimulator():
     sub.run("cd .. && cmake -B build", shell=True)
     sub.run("cd .. && cd build && make", shell=True)
-    sub.run(".././build/Simulator", shell=True)
+    sub.run([".././build/Simulator", ".././Configs/Cfg.json"])
 
 def getTrajectory(FileName):
     TrajectoryTypes = np.dtype([('T', np.double), ('X', np.double), ('U', np.double)])
@@ -22,24 +22,24 @@ def getEnergy(FileName):
 
 def createGraph():
     plt.figure(figsize = (10, 10))
-    plt.title("График")
+    plt.title("График зависимости координат X и скорости V от времени Т")
     plt.xlabel('T, c')
     plt.grid()
 
 def showTrajectory(Trajectory, GraphicName):
     NameX = GraphicName + ' X'
     NameY = GraphicName + ' U'
-    plt.plot(Trajectory['T'], Trajectory['X'], label = NameX, marker = ".")
-    plt.plot(Trajectory['T'], Trajectory['U'], label = NameY, marker = "^")
+    plt.plot(Trajectory['T'], Trajectory['X'], label = NameX)
+    plt.plot(Trajectory['T'], Trajectory['U'], label = NameY)
 
 def showEnergy(Energy, GraphicName):
     Name = GraphicName + ' E'
-    plt.plot(Energy['T'], Energy['E'], label = Name, marker = ".")
+    plt.plot(Energy['T'], Energy['E'], label = Name)
 
 
 def main():
     startSimulator()
-    FileGraphicsName = 'Graphics.png'
+    FileGraphicsName = 'Graphic.png'
     FileNameAnalytic = 'Analitic.bin'
     FileNameEiler    = 'Eiler.bin'
     FileNameHeun     = 'Heun.bin'
