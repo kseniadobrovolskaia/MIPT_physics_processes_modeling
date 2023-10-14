@@ -8,9 +8,33 @@
 
 struct Coordinates
 {
+	double Time;
 	double X;
 	double U;
 };
+
+struct TimeRange
+{
+	double Start;
+	double Stop;
+	double DeltaT;
+
+	TimeRange(double S, double St, double DT = 0.01) : Start(S), Stop(St), DeltaT(DT)
+	{
+		if (Start < 0)
+			throw std::logic_error("Start time can't be negative");
+		if (Stop < 0)
+			throw std::logic_error("Stop time can't be negative");
+		if (DeltaT < 0)
+			throw std::logic_error("DeltaT can't be negative");
+		if (Start > Stop)
+			throw std::logic_error("Start time can't be bigger than Stop time");
+		if (DeltaT > (Stop - Start))
+			throw std::logic_error("DeltaT can't be bigger than (Stop - Start)");
+	}
+};
+
+using SequenceOfStates = std::vector<Coordinates>;
 
 //----------------------------------------------------Solver----------------------------------------------------------------------
 
@@ -22,14 +46,15 @@ class Solver
 {
 protected:
 	const DiffEquation &Equation_;
+	SequenceOfStates Trajectory_;
 
 public:
 
 	Solver(const DiffEquation &Equation) : Equation_(Equation) {};
-	virtual void setStartConditions(double X0, double U0) = 0;
-	virtual void writeSolution(double Start, double Stop, double DeltaT, std::ofstream &FileWithSolution) const;
-	virtual void writeEnergy(double Start, double Stop, double DeltaT, std::ofstream &FileWithSolution) const;
-	virtual Coordinates getXV(double Time) const = 0;
+	virtual void calculateTrajectory(Coordinates StartCoords, TimeRange Range) = 0;
+	virtual void writeSolution(std::ofstream &FileWithSolution) const;
+	virtual void writeEnergy(std::ofstream &FileWithSolution) const;
+	virtual Coordinates getCoords(unsigned Step) const;
 };
 
 //------------------------------------------------AnalyticalSolver----------------------------------------------------------------
@@ -40,11 +65,11 @@ public:
 class AnalyticalSolver : public Solver
 {
 	double A_, B_;
-	
+
 public:
 	AnalyticalSolver(DiffEquation &Equation) : Solver(Equation) {};
-	void setStartConditions(double X0, double U0) override;
-	Coordinates getXV(double Time) const override;
+	void setCoefficients(Coordinates StartCoords);
+	void calculateTrajectory(Coordinates StartCoords, TimeRange Range) override;
 };
 	
 //---------------------------------------------------EilerSolver----------------------------------------------------------------
@@ -54,16 +79,12 @@ public:
  */
 class EilerSolver : public Solver
 {
-	Coordinates StartXU;
 	double DeltaT_;
-	
+
 public:
 	EilerSolver(DiffEquation &Equation, double DeltaT = 0.01) : Solver(Equation), DeltaT_(DeltaT) {};
-	void setStartConditions(double X0, double U0) override;
-	void writeSolution(double Start, double Stop, double DeltaT, std::ofstream &FileWithSolution) const override;
-	void writeEnergy(double Start, double Stop, double DeltaT, std::ofstream &FileWithSolution) const override;
-	Coordinates getStart(double Start, double DeltaT) const;
-	Coordinates getXV(double Time) const override;
+	void calculateTrajectory(Coordinates StartCoords, TimeRange Range) override;
+	Coordinates getStart(Coordinates StartCoords, double DeltaT) const;
 };
 
 //---------------------------------------------------HeunSolver----------------------------------------------------------------
@@ -77,16 +98,12 @@ public:
  */
 class HeunSolver : public Solver
 {
-	Coordinates StartXU;
 	double DeltaT_;
-	
+
 public:
 	HeunSolver(DiffEquation &Equation, double DeltaT = 0.01) : Solver(Equation), DeltaT_(DeltaT) {};
-	void setStartConditions(double X0, double U0) override;
-	void writeSolution(double Start, double Stop, double DeltaT, std::ofstream &FileWithSolution) const override;
-	void writeEnergy(double Start, double Stop, double DeltaT, std::ofstream &FileWithSolution) const override;
-	Coordinates getStart(double Start, double DeltaT) const;
-	Coordinates getXV(double Time) const override;
+	void calculateTrajectory(Coordinates StartCoords, TimeRange Range) override;
+	Coordinates getStart(Coordinates StartCoords, double DeltaT) const;
 };
 
 

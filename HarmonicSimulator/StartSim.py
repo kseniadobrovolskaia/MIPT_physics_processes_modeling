@@ -20,10 +20,9 @@ def getEnergy(FileName):
     Energy = np.fromfile(FileName, dtype=EnergyTypes);
     return Energy
 
-def createGraph():
+def createGraph(TitleName):
     plt.figure(figsize = (10, 10))
-    plt.title("График зависимости координат X и скорости V от времени Т")
-    plt.xlabel('T, c')
+    plt.title(TitleName)
     plt.grid()
 
 def showTrajectory(Trajectory, GraphicName):
@@ -47,7 +46,7 @@ def main():
     EilerTrajectory      = getTrajectory(FileNameEiler)
     HeunTrajectory       = getTrajectory(FileNameHeun)
 
-    createGraph()
+    createGraph("График зависимости координат X и скорости V от времени Т")
     showTrajectory(AnalyticalTrajectory, 'Analitic')
     showTrajectory(EilerTrajectory, 'Eiler')
     showTrajectory(HeunTrajectory, 'Heun')

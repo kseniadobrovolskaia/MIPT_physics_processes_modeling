@@ -5,165 +5,120 @@
 
 //----------------------------------------------------Solver----------------------------------------------------------------------
 
-void Solver::writeSolution(double Start, double Stop, double DeltaT, std::ofstream &FileWithSolution) const
+void Solver::writeSolution(std::ofstream &FileWithSolution) const
 {
-	for (double T = Start; T < Stop; T += DeltaT)
-	{
-		auto Coords = this->getXV(T);
-		FileWithSolution.write((const char *)(&T), sizeof(T));
-		FileWithSolution.write((const char *)(&Coords), sizeof(Coords));
-	}
+	std::for_each(Trajectory_.begin(), Trajectory_.end(), [&](const Coordinates& K) 
+			 	{ 
+			 		FileWithSolution.write((const char *)(&K), sizeof(K)); 
+			 	});
 }
 
-void Solver::writeEnergy(double Start, double Stop, double DeltaT, std::ofstream &FileWithSolution) const
+void Solver::writeEnergy(std::ofstream &FileWithSolution) const
 {
-	double Energy = 0;
 	double W = Equation_.W();
-	for (double T = Start; T < Stop; T += DeltaT)
-	{
-		auto Coords = this->getXV(T);
-		Energy = Coords.U * Coords.U / 2 + W * W * Coords.X * Coords.X / 2;
-		FileWithSolution.write((const char *)(&T), sizeof(T));
-		FileWithSolution.write((const char *)(&Energy), sizeof(Energy));
-	}
+	std::for_each(Trajectory_.begin(), Trajectory_.end(), [&](const Coordinates& K) 
+			 	{
+			 		double Energy = 0;
+					Energy = K.U * K.U / 2 + W * W * K.X * K.X / 2;
+					FileWithSolution.write((const char *)(&K.Time), sizeof(K.Time));
+					FileWithSolution.write((const char *)(&Energy), sizeof(Energy));
+			 	});
+}
+
+Coordinates Solver::getCoords(unsigned Step) const
+{
+	if (Step >= Trajectory_.size())
+		throw std::logic_error("Сoordinates were not calculated at this time step");
+	return Trajectory_[Step];
 }
 
 //------------------------------------------------AnalyticalSolver----------------------------------------------------------------
 
-void AnalyticalSolver::setStartConditions(double X0, double U0)
+void AnalyticalSolver::setCoefficients(Coordinates StartCoords)
 {
 	double W = Equation_.W();
-    A_ = U0 / W;
-    B_ = X0;
+	double T0 = StartCoords.Time, X0 = StartCoords.X, U0 = StartCoords.U;
+    A_ = (X0 * W * sin(W * T0) + U0 * cos(W * T0)) / W;
+    B_ = (X0 * W * cos(W * T0) - U0 * sin(W * T0)) / W;
 }
 
-Coordinates AnalyticalSolver::getXV(double Time) const
+void AnalyticalSolver::calculateTrajectory(Coordinates StartCoords, TimeRange Range)
 {
 	double W = Equation_.W();
-	return Coordinates{A_ * sin(W * Time) + B_ * cos(W * Time), A_ * W * cos(W * Time) - B_ * W * sin(W * Time)};
+	double Start = Range.Start, Stop = Range.Stop, DeltaT = Range.DeltaT;
+	Trajectory_.clear();
+	Trajectory_.reserve((Stop - Start) / DeltaT + 1);
+	for (double T = Start; T < Stop; T += DeltaT)
+		Trajectory_.emplace_back(T, A_ * sin(W * T) + B_ * cos(W * T), A_ * W * cos(W * T) - B_ * W * sin(W * T));
 }
 
 //------------------------------------------------EilerSolver----------------------------------------------------------------
 
-void EilerSolver::writeSolution(double Start, double Stop, double DeltaT, std::ofstream &FileWithSolution) const
+void EilerSolver::calculateTrajectory(Coordinates StartCoords, TimeRange Range)
 {
 	double W = Equation_.W();
-	Coordinates K1, K0 = getStart(Start, DeltaT);
+	double Start = Range.Start, Stop = Range.Stop, DeltaT = Range.DeltaT;
+	Trajectory_.clear();
+	Trajectory_.reserve((Stop - Start) / DeltaT + 1);
+	Coordinates K1, K0 = getStart(StartCoords, DeltaT);
 	for (double T = Start; T < Stop; T += DeltaT)
 	{
-		K1.X = K0.X + DeltaT * K0.U;
-		K1.U = K0.U - DeltaT * W * W * K0.X;
-		FileWithSolution.write((const char *)(&T), sizeof(T));
-		FileWithSolution.write((const char *)(&K0), sizeof(K0));
+		K1.Time = T + DeltaT;
+		K1.X    = K0.X + DeltaT * K0.U;
+		K1.U    = K0.U - DeltaT * W * W * K0.X;
+		Trajectory_.push_back(K0);
 		K0   = K1;
 	}
 }
 
-void EilerSolver::writeEnergy(double Start, double Stop, double DeltaT, std::ofstream &FileWithSolution) const
-{
-	double Energy = 0;
-	double W = Equation_.W();
-	Coordinates K1, K0 = getStart(Start, DeltaT);
-	for (double T = Start; T < Stop; T += DeltaT)
-	{
-		K1.X = K0.X + DeltaT * K0.U;
-		K1.U = K0.U - DeltaT * W * W * K0.X;
-		Energy = K0.U * K0.U / 2 + W * W * K0.X * K0.X / 2;
-		FileWithSolution.write((const char *)(&T), sizeof(T));
-		FileWithSolution.write((const char *)(&Energy), sizeof(Energy));
-		K0   = K1;
-	}
-}
-
-Coordinates EilerSolver::getStart(double Start, double DeltaT) const
+Coordinates EilerSolver::getStart(Coordinates StartCoords, double DeltaT) const
 {
 	double W = Equation_.W();
-	Coordinates K0 = StartXU, K1;	
-	for (double T = 0; T < Start; T += DeltaT)
+	Coordinates K0 = StartCoords, K1;
+	for (double T = 0; T < StartCoords.Time; T += DeltaT)
 	{
 		K1.X = K0.X + DeltaT * K0.U;
 		K1.U = K0.U - DeltaT * W * W * K0.X;
 		K0   = K1;
 	}
+	K0.Time = StartCoords.Time;
 	return K0;
-}
-
-void EilerSolver::setStartConditions(double X0, double U0)
-{
-	StartXU.X = X0;
-	StartXU.U = U0;
-}
-
-Coordinates EilerSolver::getXV(double Time) const
-{
-	return getStart(Time, DeltaT_);
 }
 
 //------------------------------------------------HeunSolver----------------------------------------------------------------
 
-void HeunSolver::writeSolution(double Start, double Stop, double DeltaT, std::ofstream &FileWithSolution) const
+void HeunSolver::calculateTrajectory(Coordinates StartCoords, TimeRange Range)
 {
 	double W = Equation_.W();
-	Coordinates K1, K2, K0 = getStart(Start, DeltaT);
+	double Start = Range.Start, Stop = Range.Stop, DeltaT = Range.DeltaT;
+	Trajectory_.clear();
+	Trajectory_.reserve((Stop - Start) / DeltaT + 1);
+	Coordinates K1, K2, K0 = getStart(StartCoords, DeltaT);
 	for (double T = Start; T < Stop; T += DeltaT)
 	{
-		K1.X = K0.X + DeltaT *         K0.U;
-		K1.U = K0.U - DeltaT * W * W * K0.X;
-
-		K2.X = K0.X + DeltaT / 2 *         (K0.U + K1.U);
-		K2.U = K0.U - DeltaT / 2 * W * W * (K0.X + K1.X);
-
-		FileWithSolution.write((const char *)(&T), sizeof(T));
-		FileWithSolution.write((const char *)(&K0), sizeof(K0));
-
+		K1.X    = K0.X + DeltaT *         K0.U;
+		K1.U    = K0.U - DeltaT * W * W * K0.X;
+		K2.Time = T + DeltaT;
+		K2.X    = K0.X + DeltaT / 2 *         (K0.U + K1.U);
+		K2.U    = K0.U - DeltaT / 2 * W * W * (K0.X + K1.X);
+		Trajectory_.push_back(K0);
 		K0   = K2;
 	}
 }
 
-void HeunSolver::writeEnergy(double Start, double Stop, double DeltaT, std::ofstream &FileWithSolution) const
+Coordinates HeunSolver::getStart(Coordinates StartCoords, double DeltaT) const
 {
-	double Energy = 0;
 	double W = Equation_.W();
-	Coordinates K1, K2, K0 = getStart(Start, DeltaT);
-	for (double T = Start; T < Stop; T += DeltaT)
+	Coordinates K0 = StartCoords, K1, K2;
+	for (double T = 0; T < StartCoords.Time; T += DeltaT)
 	{
 		K1.X = K0.X + DeltaT *         K0.U;
 		K1.U = K0.U - DeltaT * W * W * K0.X;
-
-		K2.X = K0.X + DeltaT / 2 *         (K0.U + K1.U);
-		K2.U = K0.U - DeltaT / 2 * W * W * (K0.X + K1.X);
-
-		Energy = K0.U * K0.U / 2 + W * W * K0.X * K0.X / 2;
-		FileWithSolution.write((const char *)(&T), sizeof(T));
-		FileWithSolution.write((const char *)(&Energy), sizeof(Energy));
-		K0   = K2;
-	}
-}
-
-Coordinates HeunSolver::getStart(double Start, double DeltaT) const
-{
-	double W = Equation_.W();
-	Coordinates K0 = StartXU, K1, K2;
-	for (double T = 0; T < Start; T += DeltaT)
-	{
-		K1.X = K0.X + DeltaT *         K0.U;
-		K1.U = K0.U - DeltaT * W * W * K0.X;
-
 		K2.X = K0.X + DeltaT / 2 *         (K0.U + K1.U);
 		K2.U = K0.U - DeltaT / 2 * W * W * (K0.X + K1.X);
 		K0   = K2;
 	}
+	K0.Time = StartCoords.Time;
 	return K0;
-}
-
-void HeunSolver::setStartConditions(double X0, double U0)
-{
-	StartXU.X = X0;
-	StartXU.U = U0;
-}
-
-Coordinates HeunSolver::getXV(double Time) const
-{
-	return getStart(Time, DeltaT_);
 }
 
