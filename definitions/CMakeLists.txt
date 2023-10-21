@@ -6,9 +6,7 @@ add_compile_options(-Wall -std=c++2a -fexceptions)
 
 include_directories(.././include)			
 
-set(SOURCE_LIB  Solver.cpp
-				DiffEquation.cpp
-
+set(SOURCE_LIB  DiffEquation.cpp
 	)
 
 add_library(HarmonicSimulator STATIC ${SOURCE_LIB})

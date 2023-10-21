@@ -3,8 +3,16 @@
 
 
 
+
 std::string getConfigName(const int argc, const char *argv[]);
 void getStartConditionsFromConfigFile(const std::string ConfigFileName, double &W, double &T0, double &X0, double &U0, double &Start, double &Stop, double &DeltaT);
+
+
+
+
+using TypeForCoords = double;
+#define Dim 3
+
 
 
 int main(const int argc, const char *argv[])
@@ -29,19 +37,19 @@ int main(const int argc, const char *argv[])
 	const std::string ConfigFileName = getConfigName(argc, argv);
 	getStartConditionsFromConfigFile(ConfigFileName, W, T0, X0, U0, Start, Stop, DeltaT);
 
-	TimeRange Range(Start, Stop, DeltaT);
-	Coordinates StartCoords(T0, X0, U0);
+	TimeRange<TypeForCoords> Range(Start, Stop, DeltaT);
+	Coordinates<TypeForCoords, Dim> StartCoords{T0, X0, U0};
 
-	HarmonicEquation Oscilliator(W);
+	HarmonicEquation<TypeForCoords> Oscilliator(W);
 
-	AnalyticalSolver Analitic(Oscilliator);
-	Analitic.setCoefficients(StartCoords);
+	AnalyticalSolver<TypeForCoords, Dim> Analitic(Oscilliator);
+	Analitic.setConstants(StartCoords);
 	Analitic.calculateTrajectory(StartCoords, Range);
 
-	EilerSolver Eiler(Oscilliator, DeltaT);
+	EilerSolver<TypeForCoords, Dim> Eiler(Oscilliator, DeltaT);
 	Eiler.calculateTrajectory(StartCoords, Range);
 
-	HeunSolver Heun(Oscilliator, DeltaT);
+	HeunSolver<TypeForCoords, Dim> Heun(Oscilliator, DeltaT);
 	Heun.calculateTrajectory(StartCoords, Range);
 
 	Analitic.writeSolution(FileAnalitic);
