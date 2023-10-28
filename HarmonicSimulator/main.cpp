@@ -1,11 +1,5 @@
-#include "Solver.hpp"
+#include "SolverWithName.hpp"
 #include "json.hpp"
-
-
-
-
-std::string getConfigName(const int argc, const char *argv[]);
-void getStartConditionsFromConfigFile(const std::string ConfigFileName, double &W, double &T0, double &X0, double &U0, double &Start, double &Stop, double &DeltaT);
 
 
 
@@ -14,54 +8,45 @@ using TypeForCoords = double;
 #define Dim 3
 
 
+std::string getConfigName(const int argc, const char *argv[]);
+void getStartConditionsFromConfigFile(const std::string ConfigFileName, double &W, Coordinates<TypeForCoords, Dim> &StartCoords, TimeRange<TypeForCoords> &Range);
+void writeSolutionAndEnergyForAllMethods(const std::string EquationName, DiffEquation<TypeForCoords, Dim> &Equation, 
+	                                     Coordinates<TypeForCoords, Dim> &StartCoords, TimeRange<TypeForCoords> &Range);
+
+
+const std::string AnaliticName = "Analitic";
+const std::string EilerName = "Eiler";
+const std::string HeunName = "Heun";
+const std::string RungeKuttaName = "RungeKutta";
+
+const std::string MathOscilliatorName = "Math";
+const std::string PhysOscilliatorName = "Phys";
+
+
+
 
 int main(const int argc, const char *argv[])
 {
-	double W, T0, X0, U0, Start, Stop, DeltaT;
-	const char *FileNameAnalitic = "Analitic.bin";
-	const char *FileNameEiler = "Eiler.bin";
-	const char *FileNameHeun = "Heun.bin";
-
-	const char *FileNameEnergyAnalitic = "AnaliticEnergy.bin";
- 	const char *FileNameEnergyEiler = "EilerEnergy.bin";
- 	const char *FileNameEnergyHeun = "HeunEnergy.bin";
-
-	std::ofstream FileAnalitic(FileNameAnalitic, std::ios::binary);
-	std::ofstream FileEiler(FileNameEiler, std::ios::binary);
-	std::ofstream FileHeun(FileNameHeun, std::ios::binary);
-
-	std::ofstream FileEnergyAnalitic(FileNameEnergyAnalitic, std::ios::binary);
-	std::ofstream FileEnergyEiler(FileNameEnergyEiler, std::ios::binary);
-	std::ofstream FileEnergyHeun(FileNameEnergyHeun, std::ios::binary);
+	double W;
+	TimeRange<TypeForCoords> Range;
+	Coordinates<TypeForCoords, Dim> StartCoords;
 
 	const std::string ConfigFileName = getConfigName(argc, argv);
-	getStartConditionsFromConfigFile(ConfigFileName, W, T0, X0, U0, Start, Stop, DeltaT);
+	getStartConditionsFromConfigFile(ConfigFileName, W, StartCoords, Range);
 
-	TimeRange<TypeForCoords> Range(Start, Stop, DeltaT);
-	Coordinates<TypeForCoords, Dim> StartCoords{T0, X0, U0};
+	//---------------Create_Equations------------------------------------
 
-	HarmonicEquation<TypeForCoords> Oscilliator(W);
+	HarmonicEquation<TypeForCoords> MathOscilliator(W);
+	writeSolutionAndEnergyForAllMethods(MathOscilliatorName, MathOscilliator, StartCoords, Range);
 
-	AnalyticalSolver<TypeForCoords, Dim> Analitic(Oscilliator);
-	Analitic.setConstants(StartCoords);
-	Analitic.calculateTrajectory(StartCoords, Range);
-
-	EilerSolver<TypeForCoords, Dim> Eiler(Oscilliator, DeltaT);
-	Eiler.calculateTrajectory(StartCoords, Range);
-
-	HeunSolver<TypeForCoords, Dim> Heun(Oscilliator, DeltaT);
-	Heun.calculateTrajectory(StartCoords, Range);
-
-	Analitic.writeSolution(FileAnalitic);
-	Eiler.writeSolution(FileEiler);
-	Heun.writeSolution(FileHeun);
-
-	Analitic.writeEnergy(FileEnergyAnalitic);
-	Eiler.writeEnergy(FileEnergyEiler);
-	Heun.writeEnergy(FileEnergyHeun);
+	PhysOscillEquation<TypeForCoords> PhysOscilliator(W);
+	writeSolutionAndEnergyForAllMethods(PhysOscilliatorName, PhysOscilliator, StartCoords, Range);
 
 	return 0;
 }
+
+
+
 
 std::string getConfigName(const int argc, const char *argv[])
 {
@@ -70,16 +55,36 @@ std::string getConfigName(const int argc, const char *argv[])
 	return argv[1];
 }
 
-void getStartConditionsFromConfigFile(const std::string ConfigFileName, double &W, double &T0, double &X0, double &U0, double &Start, double &Stop, double &DeltaT)
+void getStartConditionsFromConfigFile(const std::string ConfigFileName, double &W, Coordinates<TypeForCoords, Dim> &StartCoords, TimeRange<TypeForCoords> &Range)
 {
 	std::ifstream ConfigFile(ConfigFileName);
 	nlohmann::json Config = nlohmann::json::parse(ConfigFile);
 
 	W = Config["W"];
-	T0 = Config["T0"];
-	X0 = Config["X0"];
-	U0 = Config["V0"];
-	Start = Config["Start"];
-	Stop = Config["Stop"];
-	DeltaT = Config["Step"];
+	StartCoords[0] = Config["T0"];
+	StartCoords[1] = Config["X0"];
+	StartCoords[2] = Config["V0"];
+	Range.Start = Config["Start"];
+	Range.Stop = Config["Stop"];
+	Range.DeltaT = Config["Step"];
+}
+
+void writeSolutionAndEnergyForAllMethods(const std::string EquationName, DiffEquation<TypeForCoords, Dim> &Equation, 
+	                                     Coordinates<TypeForCoords, Dim> &StartCoords, TimeRange<TypeForCoords> &Range)
+{
+	AnalyticalSolver<TypeForCoords, Dim> Analitic(Equation);
+	SolverWithName<TypeForCoords, Dim> AnaliticWithMath(AnaliticName, EquationName, Analitic);
+	AnaliticWithMath.writeSolutionAndEnergy(StartCoords, Range);
+
+	EilerSolver<TypeForCoords, Dim> Eiler(Equation, Range.DeltaT);
+	SolverWithName<TypeForCoords, Dim> EilerWithMath(EilerName, EquationName, Eiler);
+	EilerWithMath.writeSolutionAndEnergy(StartCoords, Range);
+
+	HeunSolver<TypeForCoords, Dim> Heun(Equation, Range.DeltaT);
+	SolverWithName<TypeForCoords, Dim> HeunWithMath(HeunName, EquationName, Eiler);
+	HeunWithMath.writeSolutionAndEnergy(StartCoords, Range);
+
+	RungeKuttaSolver<TypeForCoords, Dim> RungeKutta(Equation, Range.DeltaT);
+	SolverWithName<TypeForCoords, Dim> RungeKuttaWithMath(RungeKuttaName, EquationName, Eiler);
+	RungeKuttaWithMath.writeSolutionAndEnergy(StartCoords, Range);
 }

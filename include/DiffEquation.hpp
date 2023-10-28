@@ -28,9 +28,9 @@ class DiffEquation
 {
 public:
 	DiffEquation() {};
-	Coordinates<T, Dim> getDerivative(Coordinates<T, Dim> State) const { return Coordinates<T, Dim>(); }
-	Coordinates<T, Dim - 1> getConstants(Coordinates<T, Dim> StartCoords) const { return Coordinates<T, Dim - 1>(); }
-	Coordinates<T, Dim> getState(T Time, Coordinates<T, Dim - 1> Constants) const { return Coordinates<T, Dim>(); }
+	virtual Coordinates<T, Dim> getDerivative(Coordinates<T, Dim> State) const { return Coordinates<T, Dim>(); }
+	virtual Coordinates<T, Dim - 1> getConstants(Coordinates<T, Dim> StartCoords) const { return Coordinates<T, Dim - 1>(); }
+	virtual Coordinates<T, Dim> getState(T Time, Coordinates<T, Dim - 1> Constants) const { return Coordinates<T, Dim>(); }
 };
 
 //------------------------------------------------HarmonicEquation----------------------------------------------------------------
@@ -38,7 +38,7 @@ public:
 /**
  * @brief class DiffEquation - equation of harmonic oscillations with frequency W.
  *                             
- *              Coordinates<T, 2> = {X, V}
+ *              Coordinates<T, 3> = {Time, X, V}
  *                                 ..   .
  *              HarmonicEquation - x + Ax + Bx + C = 0 
  *                     
@@ -57,23 +57,23 @@ class HarmonicEquation : public DiffEquation<T, 3>
 
 public:
 	HarmonicEquation(T W) : DiffEquation<T, 3>(), A_(0), B_(W * W), C_(0) {};
-	Coordinates<T, 3> getDerivative(Coordinates<T, 3> State) const
+	Coordinates<T, 3> getDerivative(Coordinates<T, 3> State) const override
 	{
 		T X = State[1];
 		T V = State[2];
 		return Coordinates<T, 3>{1, V, -A_ * V - B_ * X - C_};
 	}
 
-	Coordinates<T, 2> getConstants(Coordinates<T, 3> StartCoords) const
+	Coordinates<T, 2> getConstants(Coordinates<T, 3> StartCoords) const override
 	{
 		T W = sqrt(B_);
 		T T0 = StartCoords[0], X0 = StartCoords[1], U0 = StartCoords[2];
-	    T C1_ = (X0 * W * sin(W * T0) + U0 * cos(W * T0)) / W;
-	    T C2_ = (X0 * W * cos(W * T0) - U0 * sin(W * T0)) / W;
-		return Coordinates<T, 2>{C1_, C2_};
+	    T C1 = (X0 * W * sin(W * T0) + U0 * cos(W * T0)) / W;
+	    T C2 = (X0 * W * cos(W * T0) - U0 * sin(W * T0)) / W;
+		return Coordinates<T, 2>{C1, C2};
 	}
 
-	Coordinates<T, 3> getState(T Time, Coordinates<T, 2> Constants) const
+	Coordinates<T, 3> getState(T Time, Coordinates<T, 2> Constants) const override
 	{
 		T W = sqrt(B_);
 		T C1 = Constants[0], C2 = Constants[1];
@@ -86,5 +86,43 @@ public:
 	// Attenuation
 	T G() const { return C_; };
 };
+
+//------------------------------------------------PhysOscillEquation----------------------------------------------------------------
+
+/**
+ * @brief class PhysOscillEquation - equation of physical harmonic oscillations with frequency W.
+ *                             
+ *              Coordinates<T, 3> = {Time, X, V}
+ *                                 ..   
+ *              HarmonicEquation - x  + W^2 sin x + C = 0 
+ *                     
+ *                              _  .
+ *                             |   x = u
+ *                            <    .
+ *                             |_  u = -W^2 sin x - C
+ *               
+ * 		   getDerivative(x, u) == [u, -W^2 sin x - C]
+ *              
+ */
+template <typename T>
+class PhysOscillEquation : public DiffEquation<T, 3>
+{
+	T W_, C_;
+
+public:
+	PhysOscillEquation(T W, T C = 0) : DiffEquation<T, 3>(), W_(W), C_(C) {};
+	Coordinates<T, 3> getDerivative(Coordinates<T, 3> State) const override
+	{
+		T X = State[1];
+		T V = State[2];
+		return Coordinates<T, 3>{1, V, -W_ * W_ * sin(X) - C_};
+	}
+
+	// Frequency
+	T W() const { return W_; };
+	// Attenuation
+	T G() const { return C_; };
+};
+
 
 #endif // DIFF_EQUATION_H
