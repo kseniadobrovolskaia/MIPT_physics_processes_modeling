@@ -1,14 +1,16 @@
 import subprocess as sub
 import numpy as np
+import math
 import matplotlib.pyplot as plt
+import json
 
 
 
-
-def startSimulator():
+def startSimulator(CfgName):
     sub.run("cd .. && cmake -B build", shell=True)
     sub.run("cd .. && cd build && make", shell=True)
-    sub.run([".././build/Simulator", ".././Configs/Cfg.json"])
+    FullCfgName = ".././Configs/" + CfgName
+    sub.run([".././build/Simulator", FullCfgName])
 
 def getTrajectory(FileName):
     TrajectoryTypes = np.dtype([('T', np.double), ('X', np.double), ('U', np.double)])
@@ -31,6 +33,14 @@ def showTrajectory(Trajectory, GraphicName):
     plt.plot(Trajectory['T'], Trajectory['X'], label = NameX)
     plt.plot(Trajectory['T'], Trajectory['U'], label = NameY)
 
+def showX(Trajectory, GraphicName):
+    NameX = GraphicName + ' X'
+    plt.plot(Trajectory['T'], Trajectory['X'], label = NameX)
+
+def showU(Trajectory, GraphicName):
+    NameU = GraphicName + ' U'
+    plt.plot(Trajectory['T'], Trajectory['U'], label = NameU)
+
 def showPhaseDiagramm(Trajectory, GraphicName):
     NameX = GraphicName + ' X'
     NameY = GraphicName + ' U'
@@ -40,17 +50,27 @@ def showDeltaEnergy(Energy, Energy1, GraphicName):
     Name = GraphicName
     plt.plot(Energy['T'], Energy['E'] - Energy1['E'], label = Name)
 
-def showDeltaTrajectory(Trajectory, Trajectory1):
-    plt.plot(Trajectory['T'], Trajectory['X'] - Trajectory1['X'], label = 'Delta X')
-    plt.plot(Trajectory['T'], Trajectory['U'] - Trajectory1['U'], label = 'Delta U')
+def showDeltaTrajectory(Trajectory, Trajectory1, GraphicName):
+    plt.plot(Trajectory['T'], Trajectory['X'] - Trajectory1['X'], label = GraphicName + 'Delta X')
+    plt.plot(Trajectory['T'], Trajectory['U'] - Trajectory1['U'], label = GraphicName + 'Delta U')
+
+def showDeltaX(Trajectory, Trajectory1, GraphicName):
+    plt.plot(Trajectory['T'], Trajectory['X'] - Trajectory1['X'], label = GraphicName)
+
+def showDeltaU(Trajectory, Trajectory1, GraphicName):
+    plt.plot(Trajectory['T'], Trajectory['U'] - Trajectory1['U'], label = GraphicName)
 
 def showEnergy(Energy, GraphicName):
     Name = GraphicName + ' E'
     plt.plot(Energy['T'], Energy['E'], label = Name)
+    
+def writeJsonInFile(Cfg, FileName):
+    with open(".././Configs/" + FileName, 'w') as File:
+        json.dump(Cfg, File)
 
 
 def main():
-    startSimulator()
+    startSimulator("Cfg.json")
     FileNameAnalyticMath   = 'AnaliticMath.bin'
     FileNameEilerMath      = 'EilerMath.bin'
     FileNameHeunMath       = 'HeunMath.bin'

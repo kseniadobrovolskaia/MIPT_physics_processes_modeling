@@ -36,7 +36,7 @@ public:
 //------------------------------------------------HarmonicEquation----------------------------------------------------------------
 
 /**
- * @brief class DiffEquation - equation of harmonic oscillations with frequency W.
+ * @brief class HarmonicEquation - equation of harmonic oscillations with frequency W.
  *                             
  *              Coordinates<T, 3> = {Time, X, V}
  *                                 ..   .
@@ -122,6 +122,58 @@ public:
 	T W() const { return W_; };
 	// Attenuation
 	T G() const { return C_; };
+};
+
+//------------------------------------------------HarmonicEquationWithFriction------------------------------------------------------
+
+/**
+ * @brief class HarmonicEquationWithFriction - HarmonicEquation with friction G.
+ *                             
+ *              Coordinates<T, 3> = {Time, X, V}
+ *                                 ..    .
+ *              HarmonicEquation - x + 2Gx + W^2 x = 0 
+ *                     
+ *                              _  .
+ *                             |   x = u
+ *                            <    .
+ *                             |_  u = -2Gu - W^2 x
+ *               
+ * 		   getDerivative(x, u) == [u, -2Gu - W^2 x]
+ *              
+ */
+template <typename T>
+class HarmonicEquationWithFriction : public DiffEquation<T, 3>
+{
+	T W_, G_;
+
+public:
+	HarmonicEquationWithFriction(T W, T G) : DiffEquation<T, 3>(), W_(W), G_(G) {};
+	Coordinates<T, 3> getDerivative(Coordinates<T, 3> State) const override
+	{
+		T X = State[1];
+		T V = State[2];
+		return Coordinates<T, 3>{1, V, -2 * G_ * V - W_ * W_ * X};
+	}
+
+	// Coordinates<T, 2> getConstants(Coordinates<T, 3> StartCoords) const override
+	// {
+	// 	T T0 = StartCoords[0], X0 = StartCoords[1], U0 = StartCoords[2];
+	//     T C1 = (X0 * W * sin(W * T0) + U0 * cos(W * T0)) / W;
+	//     T C2 = (X0 * W * cos(W * T0) - U0 * sin(W * T0)) / W;
+	// 	return Coordinates<T, 2>{C1, C2};
+	// }
+
+	// Coordinates<T, 3> getState(T Time, Coordinates<T, 2> Constants) const override
+	// {
+	// 	T C1 = Constants[0], C2 = Constants[1];
+	// 	T X = C1 * sin(W_ * Time) + C2 * cos(W_ * Time);
+	// 	T V = C1 * W_ * cos(W_ * Time) - C2 * W_ * sin(W_ * Time);
+	// 	return Coordinates<T, 3>{Time, X, V}; 
+	// }
+	// Frequency
+	T W() const { return W_; };
+	// Attenuation
+	T G() const { return G_; };
 };
 
 

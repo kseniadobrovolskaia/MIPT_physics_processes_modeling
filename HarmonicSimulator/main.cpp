@@ -21,6 +21,7 @@ const std::string RungeKuttaName = "RungeKutta";
 
 const std::string MathOscilliatorName = "Math";
 const std::string PhysOscilliatorName = "Phys";
+const std::string MathWithFrictionOscilliatorName = "MathWithFric";
 
 
 
@@ -42,6 +43,8 @@ int main(const int argc, const char *argv[])
 	PhysOscillEquation<TypeForCoords> PhysOscilliator(W);
 	writeSolutionAndEnergyForAllMethods(PhysOscilliatorName, PhysOscilliator, StartCoords, Range);
 
+	HarmonicEquationWithFriction<TypeForCoords> MathWithFriction(W, 0.2);
+	writeSolutionAndEnergyForAllMethods(MathWithFrictionOscilliatorName, MathWithFriction, StartCoords, Range);
 	return 0;
 }
 
@@ -81,10 +84,10 @@ void writeSolutionAndEnergyForAllMethods(const std::string EquationName, DiffEqu
 	EilerWithMath.writeSolutionAndEnergy(StartCoords, Range);
 
 	HeunSolver<TypeForCoords, Dim> Heun(Equation, Range.DeltaT);
-	SolverWithName<TypeForCoords, Dim> HeunWithMath(HeunName, EquationName, Eiler);
+	SolverWithName<TypeForCoords, Dim> HeunWithMath(HeunName, EquationName, Heun);
 	HeunWithMath.writeSolutionAndEnergy(StartCoords, Range);
 
 	RungeKuttaSolver<TypeForCoords, Dim> RungeKutta(Equation, Range.DeltaT);
-	SolverWithName<TypeForCoords, Dim> RungeKuttaWithMath(RungeKuttaName, EquationName, Eiler);
+	SolverWithName<TypeForCoords, Dim> RungeKuttaWithMath(RungeKuttaName, EquationName, RungeKutta);
 	RungeKuttaWithMath.writeSolutionAndEnergy(StartCoords, Range);
 }

@@ -82,6 +82,9 @@ public:
 		return Solver<T, Dim>::Trajectory_[Step];
 	}
 
+	virtual const SequenceOfStates<T, Dim> &getTrajectory() const { return Trajectory_; }
+	virtual const DiffEquation<T, Dim>     &getEquation()   const { return Equation_;   }
+
 };
 
 //------------------------------------------------AnalyticalSolver----------------------------------------------------------------

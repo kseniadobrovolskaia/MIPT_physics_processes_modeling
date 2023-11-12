@@ -39,6 +39,8 @@ struct SolverWithName
 
 	void writeSolutionAndEnergy(Coordinates<T, Dim> &StartCoords, TimeRange<T> &Range)
 	{
+		if ((EquationName_ == "MathWithFric") && (SolverName_ == "Analitic"))
+			return;
 		if ((EquationName_ == "Phys") && (SolverName_ == "Analitic"))
 			return;
 		writeSolution(StartCoords, Range);
