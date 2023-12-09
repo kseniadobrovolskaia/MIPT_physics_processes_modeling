@@ -32,6 +32,8 @@ class DrivenForce
 
 public:
 	DrivenForce(T F, T W, T (*Func)(T F, T W, Coordinates<T, 3> State)) : F_(F), W_(W), Func_(Func) {};
+	T getF() const { return F_; }
+	T getW() const { return W_; }
 	T operator()(Coordinates<T, 3> State) const { return Func_(F_, W_, State); }
 };
 

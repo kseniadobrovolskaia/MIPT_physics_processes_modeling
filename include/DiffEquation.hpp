@@ -260,6 +260,77 @@ public:
 		return Coordinates<T, 3>{1, V, -2 * G_ * V - W_ * W_ * X + F_(State)};
 	}
 
+	Coordinates<T, 3> getState(T Time, Coordinates<T, 2> Constants) const override
+	{
+		T X = getX(Time, Constants);
+		T V = getU(Time, Constants);
+		return Coordinates<T, 3>{Time, X, V}; 
+	}
+
+    T getX(T Time, Coordinates<T, 2> Constants) const
+	{
+		T C1 = Constants[0], C2 = Constants[1];
+		T W0 = F_.getW(), F = F_.getF(), W = W_, G = G_, t = Time;
+
+   		T X = C1*exp(t*(-G + sqrt(-G + W)*sqrt(G + W))) 
+   		+ C2*exp(-t*(G + sqrt(-G + W)*sqrt(G + W))) + 2*F*G*W0*sin(W0*t)/(4*pow(G, 2)*pow(W0, 2) 
+   		+ pow(W, 4) - 2*pow(W, 2)*pow(W0, 2) + pow(W0, 4))
+   		+ F*pow(W, 2)*cos(W0*t)/(4*pow(G, 2)*pow(W0, 2) 
+   		+ pow(W, 4) - 2*pow(W, 2)*pow(W0, 2) + pow(W0, 4)) 
+   		- F*pow(W0, 2)*cos(W0*t)/(4*pow(G, 2)*pow(W0, 2) + pow(W, 4) 
+   		- 2*pow(W, 2)*pow(W0, 2) + pow(W0, 4));
+
+   		return X;
+	}
+
+    T getU(T Time, Coordinates<T, 2> Constants) const
+	{
+		T C1 = Constants[0], C2 = Constants[1];
+		T W0 = F_.getW(), F = F_.getF(), W = W_, G = G_, t = Time;
+		
+		T U = C1*(-G + sqrt(-G + W)*sqrt(G + W))*exp(t*(-G + sqrt(-G + W)*sqrt(G + W))) 
+		+ C2*(-G - sqrt(-G + W)*sqrt(G + W))*exp(-t*(G + sqrt(-G + W)*sqrt(G + W))) 
+		+ 2*F*G*pow(W0, 2)*cos(W0*t)/(4*pow(G, 2)*pow(W0, 2) + pow(W, 4) - 2*pow(W, 2)*pow(W0, 2) 
+		+ pow(W0, 4)) - F*pow(W, 2)*W0*sin(W0*t)/(4*pow(G, 2)*pow(W0, 2) + pow(W, 4) 
+		- 2*pow(W, 2)*pow(W0, 2) + pow(W0, 4)) + F*pow(W0, 3)*sin(W0*t)/(4*pow(G, 2)*pow(W0, 2) 
+		+ pow(W, 4) - 2*pow(W, 2)*pow(W0, 2) + pow(W0, 4));
+
+		return U;
+	}
+
+	Coordinates<T, 2> getConstants(Coordinates<T, 3> StartCoords) const override
+	{
+		T X0 = StartCoords[1], U0 = StartCoords[2];
+		T W0 = F_.getW(), F = F_.getF(), W = W_, G = G_;
+
+		T P1 = (-G + sqrt(-G + W)*sqrt(G + W)), P2 = (-G - sqrt(-G + W)*sqrt(G + W));
+		T P3 = F*W*W/(4*G*G*W0*W0 + pow(W, 4) - 2*W*W*W0*W0 + pow(W0, 4)) 
+		- F*W0*W0/(4*G*G*W0*W0 + pow(W, 4) - 2*W*W*W0*W0 + pow(W0, 4));
+		T P4 = 2*F*G*W0*W0/(4*G*G*W0*W0 + pow(W, 4) - 2*W*W*W0*W0 + pow(W0, 4));
+
+		T C2 = (U0 - P1*X0 + P3*P1 - P4) / (P2 - P1);
+	    T C1 = X0 - C2 - P3;
+	    
+		return Coordinates<T, 2>{C1, C2};
+	}
+
+// X(0) = C1 + C2 + P3
+// U(0) = C1*P1 + C2*P2 + P4
+// U0 = (X0 - C2 - P3) * P1 + c2P2 + p4=> 
+
+// 	Eq(y(t), C1*exp(t*(-G + sqrt(G - W)*sqrt(G + W))) + 
+// 		C2*exp(-t*(G + sqrt(G - W)*sqrt(G + W))) + 2*F*G*W0*sin(W0*t)/
+// 		(4*G**2*W0**2 + W**4 - 2*W**2*W0**2 + W0**4) + F*W**2*cos(W0*t)
+// 		/(4*G**2*W0**2 + W**4 - 2*W**2*W0**2 + W0**4) - F*W0**2*cos(W0*t)/
+// 		(4*G**2*W0**2 + W**4 - 2*W**2*W0**2 + W0**4))
+
+
+// C1*(-G + sqrt(G - W)*sqrt(G + W))*exp(t*(-G + sqrt(G - W)*sqrt(G + W))) 
+// + C2*(-G - sqrt(G - W)*sqrt(G + W))*exp(-t*(G + sqrt(G - W)*sqrt(G + W))) 
+// + 2*F*G*W0**2*cos(W0*t)/(4*G**2*W0**2 + W**4 - 2*W**2*W0**2 + W0**4) 
+// - F*W**2*W0*sin(W0*t)/(4*G**2*W0**2 + W**4 - 2*W**2*W0**2 + W0**4) +
+//  F*W0**3*sin(W0*t)/(4*G**2*W0**2 + W**4 - 2*W**2*W0**2 + W0**4)
+
 	// Frequency
 	T W() const { return W_; };
 	// Attenuation

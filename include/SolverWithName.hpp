@@ -21,6 +21,7 @@ struct SolverWithName
 	{
 		if (SolverName_ == "Analitic")
 			static_cast<AnalyticalSolver<T, Dim>&>(Solver_).setConstants(StartCoords);
+	
 		Solver_.calculateTrajectory(StartCoords, Range);
 
 		std::string FileSolutionName = SolverName_ + EquationName_ + ".bin";
@@ -39,8 +40,6 @@ struct SolverWithName
 
 	void writeSolutionAndEnergy(Coordinates<T, Dim> &StartCoords, TimeRange<T> &Range)
 	{
-		if ((EquationName_ == "MathWithDriv") && (SolverName_ == "Analitic"))
-			return;		
 		if ((EquationName_ == "Phys") && (SolverName_ == "Analitic"))
 			return;
 		writeSolution(StartCoords, Range);

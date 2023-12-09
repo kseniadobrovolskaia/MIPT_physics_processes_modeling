@@ -5,10 +5,29 @@ import matplotlib.pyplot as plt
 import json
 
 
+def getSteadyAmplitude(Gamma, OwnOmega, Step, Trajectory):
+    # The time after which the amplitude of natural oscillations 
+    # will die out exp(2) times
+    Tau = 2.0 / (Gamma * OwnOmega)
+    Start = int(Tau / Step)
+    Max = 0
+    for T in range(Start, len(Trajectory['X']) - Start):
+        if (Trajectory['X'][T] > Max):
+            Max = Trajectory['X'][T]
+    return Max
 
-def startSimulator(CfgName):
+def getAnalitycalACHH(Gamma, OwnOmega, F, Points):
+    A = []
+    for Point in Points:
+        A0 = F / math.sqrt((OwnOmega**2 - Point**2)**2 + 4 * Gamma**2 * Point**2)
+        A.append(A0)
+    return A
+        
+def buildSimulator():
     sub.run("cd .. && cmake -B build", shell=True)
     sub.run("cd .. && cd build && make", shell=True)
+
+def startSimulator(CfgName):
     FullCfgName = ".././Configs/" + CfgName
     sub.run([".././build/Simulator", FullCfgName])
 
@@ -70,6 +89,7 @@ def writeJsonInFile(Cfg, FileName):
 
 
 def main():
+    buildSimulator()
     startSimulator("Cfg.json")
     FileNameAnalyticMath   = 'AnaliticMath.bin'
     FileNameEilerMath      = 'EilerMath.bin'
