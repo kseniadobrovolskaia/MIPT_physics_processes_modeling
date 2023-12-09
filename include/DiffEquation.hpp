@@ -4,8 +4,16 @@
 
 
 #include "DrivenForce.hpp"
+#include "magic_enum.hpp"
 
 
+enum class Models
+{
+	Math,
+	Phys,
+	MathWithFric,
+	MathWithDriv
+};
 
 
 //--------------------------------------------------DiffEquation-------------------------------------------------------------------
@@ -24,6 +32,7 @@ public:
 	virtual Coordinates<T, Dim> getDerivative(Coordinates<T, Dim> State) const { return Coordinates<T, Dim>(); }
 	virtual Coordinates<T, Dim - 1> getConstants(Coordinates<T, Dim> StartCoords) const { return Coordinates<T, Dim - 1>(); }
 	virtual Coordinates<T, Dim> getState(T Time, Coordinates<T, Dim - 1> Constants) const { return Coordinates<T, Dim>(); }
+	virtual const std::basic_string_view<char> getName() const { return "BaseModel"; }
 };
 
 //------------------------------------------------HarmonicEquation----------------------------------------------------------------
@@ -50,6 +59,7 @@ class HarmonicEquation : public DiffEquation<T, 3>
 
 public:
 	HarmonicEquation(T W) : DiffEquation<T, 3>(), B_(W * W) {};
+	const std::basic_string_view<char> getName() const override { return magic_enum::enum_name(Models::Math); }
 
 	Coordinates<T, 3> getDerivative(Coordinates<T, 3> State) const override
 	{
@@ -103,6 +113,8 @@ class PhysOscillEquation : public DiffEquation<T, 3>
 
 public:
 	PhysOscillEquation(T W) : DiffEquation<T, 3>(), W_(W) {};
+	const std::basic_string_view<char> getName() const override { return magic_enum::enum_name(Models::Phys); }
+
 	Coordinates<T, 3> getDerivative(Coordinates<T, 3> State) const override
 	{
 		T X = State[1];
@@ -138,6 +150,8 @@ class HarmonicEquationWithFriction : public DiffEquation<T, 3>
 
 public:
 	HarmonicEquationWithFriction(T W, T G) : DiffEquation<T, 3>(), W_(W), G_(G) {};
+	const std::basic_string_view<char> getName() const override { return magic_enum::enum_name(Models::MathWithFric); }
+
 	Coordinates<T, 3> getDerivative(Coordinates<T, 3> State) const override
 	{
 		T X = State[1];
@@ -253,6 +267,8 @@ class DrivenOscillatorEquation : public DiffEquation<T, 3>
 
 public:
 	DrivenOscillatorEquation(T W, T G, const DrivenForce<T> &F) : DiffEquation<T, 3>(), W_(W), G_(G), F_(F) {};
+	const std::basic_string_view<char> getName() const override { return magic_enum::enum_name(Models::MathWithDriv); }
+
 	Coordinates<T, 3> getDerivative(Coordinates<T, 3> State) const override
 	{
 		T X = State[1];
@@ -313,23 +329,6 @@ public:
 	    
 		return Coordinates<T, 2>{C1, C2};
 	}
-
-// X(0) = C1 + C2 + P3
-// U(0) = C1*P1 + C2*P2 + P4
-// U0 = (X0 - C2 - P3) * P1 + c2P2 + p4=> 
-
-// 	Eq(y(t), C1*exp(t*(-G + sqrt(G - W)*sqrt(G + W))) + 
-// 		C2*exp(-t*(G + sqrt(G - W)*sqrt(G + W))) + 2*F*G*W0*sin(W0*t)/
-// 		(4*G**2*W0**2 + W**4 - 2*W**2*W0**2 + W0**4) + F*W**2*cos(W0*t)
-// 		/(4*G**2*W0**2 + W**4 - 2*W**2*W0**2 + W0**4) - F*W0**2*cos(W0*t)/
-// 		(4*G**2*W0**2 + W**4 - 2*W**2*W0**2 + W0**4))
-
-
-// C1*(-G + sqrt(G - W)*sqrt(G + W))*exp(t*(-G + sqrt(G - W)*sqrt(G + W))) 
-// + C2*(-G - sqrt(G - W)*sqrt(G + W))*exp(-t*(G + sqrt(G - W)*sqrt(G + W))) 
-// + 2*F*G*W0**2*cos(W0*t)/(4*G**2*W0**2 + W**4 - 2*W**2*W0**2 + W0**4) 
-// - F*W**2*W0*sin(W0*t)/(4*G**2*W0**2 + W**4 - 2*W**2*W0**2 + W0**4) +
-//  F*W0**3*sin(W0*t)/(4*G**2*W0**2 + W**4 - 2*W**2*W0**2 + W0**4)
 
 	// Frequency
 	T W() const { return W_; };

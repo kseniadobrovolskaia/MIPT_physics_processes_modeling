@@ -6,6 +6,14 @@
 
 
 
+enum class Solvers
+{
+	Analitic,
+	Eiler,
+	Heun,
+	RungeKutta
+};
+
 
 template <typename T>
 struct TimeRange
@@ -53,6 +61,7 @@ protected:
 public:
 
 	Solver(const DiffEquation<T, Dim> &Equation) : Equation_(Equation) {};
+	virtual const std::basic_string_view<char> getName() const { return "BaseSolver"; }
 	virtual void calculateTrajectory(Coordinates<T, Dim> StartCoords, TimeRange<T> Range) { return; };
 	virtual bool isCalculated() const { return !Trajectory_.empty(); }
 	virtual void writeSolution(std::ofstream &FileWithSolution) const
@@ -99,6 +108,8 @@ class AnalyticalSolver : public Solver<T, Dim>
 
 public:
 	AnalyticalSolver(DiffEquation<T, Dim> &Equation) : Solver<T, Dim>(Equation) {};
+	const std::basic_string_view<char> getName() const override { return magic_enum::enum_name(Solvers::Analitic); }
+
 	void setConstants(Coordinates<T, Dim> StartCoords)
 	{
 		Constants_ = Solver<T, Dim>::Equation_.getConstants(StartCoords);
@@ -126,6 +137,8 @@ class EilerSolver : public Solver<T, Dim>
 
 public:
 	EilerSolver(DiffEquation<T, Dim> &Equation, T DeltaT = 0.01) : Solver<T, Dim>(Equation), DeltaT_(DeltaT) {};
+	const std::basic_string_view<char> getName() const override { return magic_enum::enum_name(Solvers::Eiler); }
+
 	void calculateTrajectory(Coordinates<T, Dim> StartCoords, TimeRange<T> Range) override
 	{
 		T Start = Range.Start, Stop = Range.Stop, DeltaT = Range.DeltaT;
@@ -166,6 +179,8 @@ class HeunSolver : public Solver<T, Dim>
 
 public:
 	HeunSolver(DiffEquation<T, Dim> &Equation, T DeltaT = 0.01) : Solver<T, Dim>(Equation), DeltaT_(DeltaT) {};
+	const std::basic_string_view<char> getName() const override { return magic_enum::enum_name(Solvers::Heun); }
+
 	void calculateTrajectory(Coordinates<T, Dim> StartCoords, TimeRange<T> Range) override
 	{
 		T Start = Range.Start, Stop = Range.Stop, DeltaT = Range.DeltaT;
@@ -208,6 +223,8 @@ class RungeKuttaSolver : public Solver<T, Dim>
 
 public:
 	RungeKuttaSolver(DiffEquation<T, Dim> &Equation, T DeltaT = 0.01) : Solver<T, Dim>(Equation), DeltaT_(DeltaT) {};
+	const std::basic_string_view<char> getName() const override { return magic_enum::enum_name(Solvers::RungeKutta); }
+
 	void calculateTrajectory(Coordinates<T, Dim> StartCoords, TimeRange<T> Range) override
 	{
 		T Start = Range.Start, Stop = Range.Stop, DeltaT = Range.DeltaT;

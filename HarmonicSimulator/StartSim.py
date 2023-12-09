@@ -1,4 +1,5 @@
 import subprocess as sub
+import sys
 import numpy as np
 import math
 import matplotlib.pyplot as plt
@@ -27,9 +28,8 @@ def buildSimulator():
     sub.run("cd .. && cmake -B build", shell=True)
     sub.run("cd .. && cd build && make", shell=True)
 
-def startSimulator(CfgName):
-    FullCfgName = ".././Configs/" + CfgName
-    sub.run([".././build/Simulator", FullCfgName])
+def startSimulator(Cfg):
+    sub.run([".././build/Simulator", Cfg])
 
 def getTrajectory(FileName):
     TrajectoryTypes = np.dtype([('T', np.double), ('X', np.double), ('U', np.double)])
@@ -44,6 +44,8 @@ def getEnergy(FileName):
 def createGraph(TitleName):
     plt.figure(figsize = (10, 10))
     plt.title(TitleName)
+    plt.xlabel("T")
+    plt.ylabel("X / U")
     plt.grid()
 
 def showTrajectory(Trajectory, GraphicName):
@@ -89,47 +91,29 @@ def writeJsonInFile(Cfg, FileName):
 
 
 def main():
+    if (len(sys.argv) < 2):
+        print("Имя конфигурационного файла ожидается в параметре запуска\n")
+        return
     buildSimulator()
-    startSimulator("Cfg.json")
-    FileNameAnalyticMath   = 'AnaliticMath.bin'
-    FileNameEilerMath      = 'EilerMath.bin'
-    FileNameHeunMath       = 'HeunMath.bin'
-    FileNameRungeKuttaMath = 'RungeKuttaMath.bin'
-    AnalyticalMathTrajectory = getTrajectory(FileNameAnalyticMath)
-    EilerMathTrajectory      = getTrajectory(FileNameEilerMath)
-    HeunMathTrajectory       = getTrajectory(FileNameHeunMath)
-    RungeKuttaMathTrajectory = getTrajectory(FileNameRungeKuttaMath)
+    CfgFileName = sys.argv[1]
+    print(CfgFileName)
+    startSimulator(CfgFileName)
 
-    FileNameEilerPhys      = 'EilerPhys.bin'
-    FileNameHeunPhys       = 'HeunPhys.bin'
-    FileNameRungeKuttaPhys = 'RungeKuttaPhys.bin'
-    EilerPhysTrajectory      = getTrajectory(FileNameEilerPhys)
-    HeunPhysTrajectory       = getTrajectory(FileNameHeunPhys)
-    RungeKuttaPhysTrajectory = getTrajectory(FileNameRungeKuttaPhys)
+    with open(CfgFileName, 'r') as Cfg:
+        Config = json.load(Cfg)
+        Model = Config["Model"]
+        Solver = Config["Solver"]
 
-    FileNameAnalyticMathE   = 'AnaliticMathEnergy.bin'
-    FileNameEilerMathE      = 'EilerMathEnergy.bin'
-    FileNameHeunMathE       = 'HeunMathEnergy.bin'
-    FileNameRungeKuttaMathE = 'RungeKuttaMathEnergy.bin'
-    AnalyticalMathTrajectoryE = getEnergy(FileNameAnalyticMathE)
-    EilerMathTrajectoryE      = getEnergy(FileNameEilerMathE)
-    HeunMathTrajectoryE       = getEnergy(FileNameHeunMathE)
-    RungeKuttaMathTrajectoryE = getEnergy(FileNameRungeKuttaMathE)
+    FullName = Solver + Model
+    FileName = FullName + ".bin"
+    Trajectory = getTrajectory(FileName)
 
-    FileNameEilerPhysE      = 'EilerPhysEnergy.bin'
-    FileNameHeunPhysE       = 'HeunPhysEnergy.bin'
-    FileNameRungeKuttaPhysE = 'RungeKuttaPhysEnergy.bin'
-    EilerPhysTrajectoryE      = getEnergy(FileNameEilerPhysE)
-    HeunPhysTrajectoryE       = getEnergy(FileNameHeunPhysE)
-    RungeKuttaPhysTrajectoryE = getEnergy(FileNameRungeKuttaPhysE)
+    GraphName = Model + " solved by " + Solver
+    createGraph(GraphName)
+    showTrajectory(Trajectory, FullName)
 
-    createGraph("График")
-    showTrajectory(EilerMathTrajectory, 'EilerMath')
-    showTrajectory(EilerPhysTrajectory, 'EilerPhys')
-
-    plt.legend()
-    plt.savefig("График.png")
-    CommandToShow = 'eog ' + "График.png"
+    plt.savefig(FullName + ".png")
+    CommandToShow = 'eog ' + FullName + ".png"
     sub.run(CommandToShow, shell=True)
 
 if __name__ == '__main__':
