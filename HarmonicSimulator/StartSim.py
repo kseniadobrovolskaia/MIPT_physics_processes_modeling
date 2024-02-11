@@ -29,7 +29,7 @@ def buildSimulator():
     sub.run("cd .. && cd build && make", shell=True)
 
 def startSimulator(Cfg):
-    sub.run([".././build/Simulator", Cfg])
+    sub.run(["../build/Simulator", Cfg])
 
 def getTrajectory(FileName):
     TrajectoryTypes = np.dtype([('T', np.double), ('X', np.double), ('U', np.double)])
@@ -51,8 +51,8 @@ def createGraph(TitleName):
 def showTrajectory(Trajectory, GraphicName):
     NameX = GraphicName + ' X'
     NameY = GraphicName + ' U'
-    plt.plot(Trajectory['T'], Trajectory['X'], label = NameX)
-    plt.plot(Trajectory['T'], Trajectory['U'], label = NameY)
+    plt.plot(Trajectory['T'], Trajectory['X'], "c", label = NameX)
+    plt.plot(Trajectory['T'], Trajectory['U'], "m", label = NameY)
 
 def showX(Trajectory, GraphicName):
     NameX = GraphicName + ' X'
@@ -86,7 +86,7 @@ def showEnergy(Energy, GraphicName):
     plt.plot(Energy['T'], Energy['E'], label = Name)
     
 def writeJsonInFile(Cfg, FileName):
-    with open(".././Configs/" + FileName, 'w') as File:
+    with open("../Configs/" + FileName, 'w') as File:
         json.dump(Cfg, File)
 
 
@@ -111,7 +111,8 @@ def main():
     GraphName = Model + " solved by " + Solver
     createGraph(GraphName)
     showTrajectory(Trajectory, FullName)
-
+    
+    plt.legend()
     plt.savefig(FullName + ".png")
     CommandToShow = 'eog ' + FullName + ".png"
     sub.run(CommandToShow, shell=True)

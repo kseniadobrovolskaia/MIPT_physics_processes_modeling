@@ -47,16 +47,19 @@ int main(const int argc, const char *argv[])
 		{
 			HarmonicEquation<TypeForCoords> MathOscilliator(W);
 			writeSolutionAndEnergyForMethod(Solver.value(), MathOscilliator, StartCoords, Range);
+			break;
 		}
 		case Models::Phys:
 		{
 			PhysOscillEquation<TypeForCoords> PhysOscilliator(W);
 			writeSolutionAndEnergyForMethod(Solver.value(), PhysOscilliator, StartCoords, Range);
+			break;
 		}
 		case Models::MathWithFric:
 		{
 			HarmonicEquationWithFriction<TypeForCoords> MathWithFriction(W, G);
 			writeSolutionAndEnergyForMethod(Solver.value(), MathWithFriction, StartCoords, Range);
+			break;
 		}
 		case Models::MathWithDriv:
 		{
@@ -64,6 +67,7 @@ int main(const int argc, const char *argv[])
 			auto Force = DrivenForce<TypeForCoords>(F, W0, DrivenForceLambda);
 			DrivenOscillatorEquation<TypeForCoords> MathWithDriven(W, G, Force);
 			writeSolutionAndEnergyForMethod(Solver.value(), MathWithDriven, StartCoords, Range);
+			break;
 		}
 	}
 
@@ -112,24 +116,28 @@ void writeSolutionAndEnergyForMethod(const Solvers Solver, DiffEquation<TypeForC
 			AnalyticalSolver<TypeForCoords, Dim> Analitic(Equation);
 			SolverWithName<TypeForCoords, Dim> AnaliticWithMath(SolverName, EquationName, Analitic);
 			AnaliticWithMath.writeSolutionAndEnergy(StartCoords, Range);
+			break;
 		}
 		case Solvers::Eiler:
 		{
 			EilerSolver<TypeForCoords, Dim> Eiler(Equation, Range.DeltaT);
 			SolverWithName<TypeForCoords, Dim> EilerWithMath(SolverName, EquationName, Eiler);
 			EilerWithMath.writeSolutionAndEnergy(StartCoords, Range);
+			break;
 		}
 		case Solvers::Heun:
 		{
 			HeunSolver<TypeForCoords, Dim> Heun(Equation, Range.DeltaT);
 			SolverWithName<TypeForCoords, Dim> HeunWithMath(SolverName, EquationName, Heun);
 			HeunWithMath.writeSolutionAndEnergy(StartCoords, Range);
+			break;
 		}
 		case Solvers::RungeKutta:
 		{
 			RungeKuttaSolver<TypeForCoords, Dim> RungeKutta(Equation, Range.DeltaT);
 			SolverWithName<TypeForCoords, Dim> RungeKuttaWithMath(SolverName, EquationName, RungeKutta);
 			RungeKuttaWithMath.writeSolutionAndEnergy(StartCoords, Range);
+			break;
 		}
 	}
 }

@@ -1,1 +1,14 @@
-{"Model": "MathWithDriv", "Solver": "RungeKutta", "W": 2, "G": 0.4, "F": 2, "W0": 2, "T0": 0, "X0": 5, "V0": 5, "Start": 0, "Stop": 30, "Step": 0.01}
+{
+  "Model": "MathWithDriv",
+  "Solver": "RungeKutta",
+  "W": 5,
+  "G": 0.5,
+  "F": 1,
+  "W0": 2,
+  "T0": 0,
+  "X0": 5,
+  "V0": 5,
+  "Start": 0,
+  "Stop": 7,
+  "Step": 0.01
+}
